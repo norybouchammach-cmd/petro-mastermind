@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Mastermind Petro</title>
+    <style>
+        body { 
+            background-color: #1e1e1e; 
+            color: #00ff00; 
+            font-family: 'Courier New', Courier, monospace; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 40px 20px; 
+            margin: 0;
+            min-height: 100vh;
+            touch-action: manipulation;
+        }
+        h1 { 
+            color: #ff00ff; 
+            text-shadow: 0 0 10px rgba(255, 0, 255, 0.5); 
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+        .board { 
+            background-color: #2d2d2d; 
+            border: 2px solid #555; 
+            border-radius: 12px; 
+            padding: 30px; 
+            width: 100%;
+            max-width: 450px; 
+            box-sizing: border-box;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .row { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 12px; 
+            border-bottom: 1px dashed #555; 
+            padding-bottom: 8px; 
+            font-size: 1.2em;
+            letter-spacing: 2px;
+        }
+        .colors {
+            color: #00ffcc;
+            font-weight: bold;
+        }
+        .feedback {
+            color: #ffaa00;
+        }
+        .input-area { 
+            margin-top: 30px; 
+            display: flex; 
+            gap: 15px; 
+            flex-direction: column;
+            align-items: center;
+        }
+        .inputs-container {
+            display: flex; 
+            justify-content: center;
+            gap: 10px;
+        }
+        input { 
+            font-family: 'Courier New', Courier, monospace; 
+            background-color: #111; 
+            color: #00ff00; 
+            border: 2px solid #555; 
+            border-radius: 6px;
+            padding: 10px; 
+            width: 35px; 
+            text-align: center; 
+            text-transform: uppercase; 
+            font-size: 16px; 
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: #00ff00;
+            box-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
+        }
+        button { 
+            background-color: #ff00ff; 
+            color: #fff; 
+            border: none;
+            border-radius: 6px;
+            padding: 12px 25px; 
+            cursor: pointer; 
+            font-family: inherit; 
+            font-size: 1.1em; 
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background 0.2s;
+            width: 100%;
+            touch-action: manipulation;
+        }
+        button:hover { 
+            background-color: #d900d9; 
+        }
+        .log { 
+            max-height: 350px; 
+            overflow-y: auto; 
+            width: 100%; 
+            margin-bottom: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .message { 
+            font-weight: bold; 
+            margin-top: 25px; 
+            text-align: center; 
+            color: #ff00ff; 
+            font-size: 1.4em;
+            line-height: 1.5;
+            animation: fadeIn 1s ease-in-out;
+        }
+        .instructions {
+            background-color: #1a1a1a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            margin-bottom: 25px;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        .instructions span {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        .win-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            animation: fadeIn 1.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <h1>MASTERMIND</h1>
+    <div class="subtitle">Édition Spéciale Petro</div>
+    
+    <div class="board">
+        <div class="instructions">
+            Entrez 4 couleurs parmi : <span>. R G B C Y M</span><br>
+            Max coups : 8
+        </div>
+        <div id="history" class="log"></div>
+        <div class="input-area" id="inputArea">
+            <div class="inputs-container">
+                <input type="text" id="c1" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text" />
+                <input type="text" id="c2" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text" />
+                <input type="text" id="c3" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text" />
+                <input type="text" id="c4" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text" />
+            </div>
+            <button onclick="jouer()">Valider la combinaison</button>
+        </div>
+        <div id="message" class="message"></div>
+        <div style="text-align: center;">
+            <img id="winImage" class="win-image" alt="Souvenir" />
+        </div>
+    </div>
+
+    <script>
+        const COULEURS = ['.', 'R', 'G', 'B', 'C', 'Y', 'M'];
+        let maxCoups = 8;
+        let nbCoups = 0;
+        let secret = [];
+        let gameActive = true;
+        
+        // Liste calquée EXACTEMENT sur ta capture d'écran GitHub
+        const listePhotos = [
+            'photo1.jpg.jpeg', 'photo2.jpg.png', 'photo3.jpg.jpeg', 'photo4.jpg.png', 
+            'photo5.jpg.png', 'photo6.jpg.png', 'photo7.jpg.jpeg', 'photo8.jpg.png'
+        ];
+
+        for (let i = 0; i < 4; i++) {
+            secret.push(COULEURS[Math.floor(Math.random() * COULEURS.length)]);
+        }
+
+        function afficherReponses(c1, c2, c3, c4, r1, r2, r3, r4) {
+            let output = "";
+            let sr1 = r1, sr2 = r2, sr3 = r3, sr4 = r4;
+            
+            if (c1 === r1) { output += "#"; r1 = '*'; }
+            if (c2 === r2) { output += "#"; r2 = '*'; }
+            if (c3 === r3) { output += "#"; r3 = '*'; }
+            if (c4 === r4) { output += "#"; r4 = '*'; }
+            
+            function verifier(c_gen, ref_obj) {
+                if (c_gen === ref_obj.val) {
+                    ref_obj.val = '+';
+                    output += "+";
+                    return true;
+                }
+                return false;
+            }
+            function apparier(c_prop, ro1, ro2, ro3) {
+                if (verifier(c_prop, ro1)) {}
+                else if (verifier(c_prop, ro2)) {}
+                else if (verifier(c_prop, ro3)) {}
+            }
+            
+            let ro1 = {val: r1}, ro2 = {val: r2}, ro3 = {val: r3}, ro4 = {val: r4};
+            if (c1 !== sr1) apparier(c1, ro2, ro3, ro4);
+            if (c2 !== sr2) apparier(c2, ro1, ro3, ro4);
+            if (c3 !== sr3) apparier(c3, ro2, ro1, ro4);
+            if (c4 !== sr4) apparier(c4, ro2, ro3, ro1);
+            
+            let nb = 0;
+            if (ro1.val === sr1) nb++;
+            if (ro2.val === sr2) nb++;
+            if (ro3.val === sr3) nb++;
+            if (ro4.val === sr4) nb++;
+            for(let i=0; i<nb; i++) output += "-";
+            
+            return output;
+        }
+
+        function jouer() {
+            if (!gameActive) return;
+            let inputs = [
+                document.getElementById('c1').value.toUpperCase(),
+                document.getElementById('c2').value.toUpperCase(),
+                document.getElementById('c3').value.toUpperCase(),
+                document.getElementById('c4').value.toUpperCase()
+            ];
+            
+            for (let c of inputs) {
+                if (!COULEURS.includes(c)) {
+                    alert("Couleur invalide : '" + c + "'\nLes couleurs possibles sont : ., R, G, B, C, Y ou M.");
+                    return;
+                }
+            }
+            
+            nbCoups++;
+            let c_ask1 = inputs[0], c_ask2 = inputs[1], c_ask3 = inputs[2], c_ask4 = inputs[3];
+            let c_trv1 = secret[0], c_trv2 = secret[1], c_trv3 = secret[2], c_trv4 = secret[3];
+            
+            let reponseStr = afficherReponses(c_ask1, c_ask2, c_ask3, c_ask4, c_trv1, c_trv2, c_trv3, c_trv4);
+            
+            let hist = document.getElementById('history');
+            let row = document.createElement('div');
+            row.className = 'row';
+            row.innerHTML = `<span class="colors"> ${c_ask1} ${c_ask2} ${c_ask3} ${c_ask4} </span> <span class="feedback"> : ${reponseStr} </span>`;
+            hist.appendChild(row);
+            
+            if (c_ask1 === c_trv1 && c_ask2 === c_trv2 && c_ask3 === c_trv3 && c_ask4 === c_trv4) {
+                document.getElementById('message').innerHTML = `Bravo ! Vous avez trouvé en ${nbCoups} coups.<br><br>JOYEUX ANNIVERSAIRE MA PETROOOOOOOOOO <3`;
+                gameActive = false;
+                document.getElementById('inputArea').style.display = 'none';
+                
+                // Sélectionner une photo au hasard parmi les 8
+                let photoAleatoire = listePhotos[Math.floor(Math.random() * listePhotos.length)];
+                let imgElement = document.getElementById('winImage');
+                imgElement.src = photoAleatoire;
+                imgElement.style.display = 'inline-block';
+                
+            } else if (nbCoups >= maxCoups) {
+                document.getElementById('message').innerHTML = `Perdu :-(<br><span style="font-size: 0.8em; color: #aaa;">La bonne combinaison était : ${c_trv1} ${c_trv2} ${c_trv3} ${c_trv4}</span>`;
+                gameActive = false;
+                document.getElementById('inputArea').style.display = 'none';
+            }
+            
+            document.getElementById('c1').value = '';
+            document.getElementById('c2').value = '';
+            document.getElementById('c3').value = '';
+            document.getElementById('c4').value = '';
+            if(gameActive) document.getElementById('c1').focus();
+            
+            hist.scrollTop = hist.scrollHeight;
+        }
+        
+        const inputElements = document.querySelectorAll('input');
+        inputElements.forEach((input, index) => {
+            input.addEventListener('input', function() {
+                if (this.value.length === 1 && index < inputElements.length - 1) {
+                    inputElements[index + 1].focus();
+                }
+            });
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') jouer();
+                if (e.key === 'Backspace' && this.value.length === 0 && index > 0) {
+                    inputElements[index - 1].focus();
+                }
+            });
+        });
+        
+        window.onload = () => document.getElementById('c1').focus();
+    </script>
+</body>
+</html>
